@@ -188,10 +188,10 @@ export class Game {
     this.emitHud(true);
   }
 
-  /** Добровольный возврат на чекпоинт (клавиша R) — без потери жизни, но засчитывается падение. */
+  /** Добровольный возврат на чекпоинт (клавиша R) — без потери жизни. */
   toCheckpoint(): void {
     if (this.state !== 'play') return;
-    this.die();
+    this.spawnAt(this.respawn);
   }
 
   setPaused(p: boolean): void {
