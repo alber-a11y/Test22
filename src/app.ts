@@ -28,7 +28,8 @@ export class App {
   menu: MenuScreen;
   map: MapScreen;
   shop: ShopScreen;
-  private shopReturn: 'menu' | 'map' | 'gameover' = 'menu';
+  private shopReturn: 'menu' | 'map' | 'gameover' | 'pause' | 'win' = 'menu';
+  private lastResult: LevelResult | null = null;
   private pauseModal: Modal | null = null;
   private last = performance.now();
   private pausedBeforeAd = false;
@@ -115,6 +116,7 @@ export class App {
     this.stage.showShowcase(!inGameScene);
     if (this.game.view) this.game.view.group.visible = inGameScene;
     if (this.game.rider) this.game.rider.root.visible = inGameScene;
+    this.game.rivals.setVisible(inGameScene);
     this.stage.setShowcaseFocus(m === 'shop' ? (this.stage.width > this.stage.height && this.stage.width > 760 ? 0.27 : 0.5) : 0.5, m === 'shop' && !(this.stage.width > this.stage.height && this.stage.width > 760) ? 0.27 : 0.5);
     if (!inGameScene) this.stage.setShowcaseRider();
     this.stage.setPodiumVisible(m !== 'map');
@@ -163,12 +165,15 @@ export class App {
 
   closeShop(): void {
     this.stage.setShowcaseRider();
-    if (this.shopReturn === 'gameover' && this.game.active) {
+    if ((this.shopReturn === 'gameover' || this.shopReturn === 'pause' || this.shopReturn === 'win') && this.game.active) {
+      const back = this.shopReturn;
       this.setMode('game');
       this.stage.setTheme(this.game.data!.theme);
       this.stage.env.populateClouds(this.game.data!.path, this.game.data!.number * 31, this.game.data!.killY + 4);
       showScreen('hud');
-      this.onGameOver();
+      if (back === 'gameover') this.onGameOver();
+      else if (back === 'win' && this.lastResult) this.showWin(this.lastResult);
+      else this.pauseGame();
       return;
     }
     if (this.shopReturn === 'map') this.goMap();
@@ -229,6 +234,13 @@ export class App {
         void this.leaveGame('menu');
       },
       settings: () => settingsDialog(),
+      shop: () => {
+        this.pauseModal = null;
+        this.shopReturn = 'pause';
+        this.setMode('shop');
+        showScreen('shop');
+        this.shop.open('vehicles');
+      },
     });
   }
 
@@ -269,8 +281,19 @@ export class App {
     if (r.newRecord) save.bestTime[r.level] = r.time;
     addCoins(r.reward);
     persist();
+    this.showWin(r);
+  }
+
+  private showWin(r: LevelResult): void {
+    this.lastResult = r;
     audio.setDuck(0.5);
     winDialog(r, {
+      shop: () => {
+        this.shopReturn = 'win';
+        this.setMode('shop');
+        showScreen('shop');
+        this.shop.open('vehicles');
+      },
       next: async () => {
         await ads.interstitial('level_complete');
         this.openLevelAfterWin(r.level + 1);

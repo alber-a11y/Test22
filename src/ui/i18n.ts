@@ -99,6 +99,11 @@ const DICT = {
   progress: ['Прогресс', 'Progress'],
   continueQ: ['Продолжить с чекпоинта?', 'Continue from checkpoint?'],
   hint: ['Подсказка', 'Hint'],
+  place: ['Место', 'Place'],
+  of: ['из', 'of'],
+  placeBonus: ['Бонус за место', 'Place bonus'],
+  race: ['Гонка', 'Race'],
+  rivals: ['Соперники', 'Rivals'],
 } as const;
 
 export type Key = keyof typeof DICT;

@@ -15,7 +15,7 @@ export const CONFIG = {
   coyoteTime: 0.12,
   jumpBuffer: 0.14,
   bounceVelocity: 17.5,
-  boostDuration: 1.4,
+  boostDuration: 0.9,
   boostSpeedMul: 1.6,
   nitroSpeedMul: 1.35,
   nitroDrain: 0.45,
@@ -42,8 +42,12 @@ export const CONFIG = {
     dailyGiftHours: 24,
   },
 
+  // Бонус монет за место в гонке с соперниками: 1-е, 2-е, 3-е
+  placeBonus: [20, 10, 5],
+
   // Уровни
   handcraftedLevels: 20,
+  trackLengthMul: 1.3, // удлинение трассы относительно базового набора сегментов
 };
 
 export type Quality = 'auto' | 'low' | 'high';

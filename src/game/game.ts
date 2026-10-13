@@ -14,6 +14,8 @@ import { sfx, EngineSound } from '../audio/sfx';
 import { Shape } from '../render/particles';
 import type { Stage } from './stage';
 import { t } from '../ui/i18n';
+import { PathTracker } from './autopilot';
+import { Rivals } from './rivals';
 
 export type GameState = 'ready' | 'play' | 'dead' | 'over' | 'finished';
 
@@ -26,6 +28,10 @@ export interface LevelResult {
   stars: number;
   newRecord: boolean;
   x2: boolean;
+  place: number; // 0 — без соперников
+  racers: number;
+  placeBonus: number;
+  multiplied?: boolean;
 }
 
 export interface HudState {
@@ -37,6 +43,9 @@ export interface HudState {
   nitro: number;
   level: number;
   shield: boolean;
+  place: number;
+  racers: number;
+  rivals: { p: number; color: string }[];
 }
 
 const tmp = new THREE.Vector3();
@@ -70,6 +79,8 @@ export class Game {
   private finishedT = 0;
   private hue = 0;
   restartStreak = 0;
+  rivals = new Rivals();
+  private tracker: PathTracker | null = null;
 
   constructor(private stage: Stage) {
     this.body = new PlayerBody(
@@ -132,6 +143,9 @@ export class Game {
     this.body.stats = { maxSpeed: vdef.maxSpeed, accel: vdef.accel, jump: vdef.jump, turn: vdef.turn, nitroRegenMul: vdef.nitroRegenMul };
     this.engine.start(vdef.motor);
 
+    this.rivals.setup(level, data, this.stage.scene);
+    this.tracker = new PathTracker(data.path);
+
     this.boosters = new Set(boosters);
     this.restartStreak = 0;
     this.resetRun();
@@ -162,6 +176,8 @@ export class Game {
     this.body.nitroRegenBonus = this.boosters.has('nitro') ? 2.5 : 1;
     this.body.nitro = 1;
     this.respawn = { ...this.data!.checkpoints[0] };
+    this.rivals.reset();
+    this.tracker?.reset();
     this.state = 'ready';
     this.paused = false;
     this.spawnAt(this.respawn);
@@ -203,6 +219,8 @@ export class Game {
     this.view = null;
     this.rider?.dispose();
     this.rider = null;
+    this.rivals.dispose();
+    this.tracker = null;
     this.data = null;
     this.engine.stop();
   }
@@ -231,14 +249,18 @@ export class Game {
       if (this.state === 'play') this.time += dt;
       const c = this.state === 'finished' ? { gas: false, brake: true, steer: 0, jump: false, nitro: false } : ctl;
       if (c.nitro && this.body.nitro > 0.05 && !this.body.nitroActive) sfx.nitro();
+      const racing = this.state === 'play' || this.state === 'finished';
+      this.rivals.think(this.view.platforms, this.simTime, dt, racing);
       this.acc += Math.min(dt, 0.1);
       const step = 1 / 120;
       let first = true;
       while (this.acc >= step) {
         this.body.step(step, first ? c : { ...c, jump: false }, this.view.platforms);
+        this.rivals.step(step, first, this.view.platforms);
         first = false;
         this.acc -= step;
       }
+      this.rivals.post(dt, this.data, this.time, racing, this.view.platforms);
       if (this.state === 'play') this.checkGameplay();
     }
 
@@ -375,13 +397,16 @@ export class Game {
     const x2 = this.boosters.has('x2');
     const e = CONFIG.economy;
     const base = Math.min(e.levelRewardMax, e.levelBaseReward + d.number * e.levelRewardPerLevel);
-    const reward = (base + this.runCoins) * (x2 ? 2 : 1);
+    const racers = this.rivals.list.length + 1;
+    const place = racers > 1 ? this.rivals.finishedCount() + 1 : 0;
+    const placeBonus = racers > 1 ? (CONFIG.placeBonus[place - 1] ?? 0) : 0;
+    const reward = (base + this.runCoins) * (x2 ? 2 : 1) + placeBonus;
     const prevBest = save.bestTime[d.number];
     const newRecord = prevBest === undefined || time < prevBest;
     this.confetti(80, d.finish.x, d.finish.y + 3, d.finish.z);
     sfx.win();
     this.vibrate(80);
-    const res: LevelResult = { level: d.number, time, deaths: this.deaths, coins: this.runCoins, reward, stars, newRecord, x2 };
+    const res: LevelResult = { level: d.number, time, deaths: this.deaths, coins: this.runCoins, reward, stars, newRecord, x2, place, racers, placeBonus };
     window.setTimeout(() => bus.emit('game:finished', res), 1300);
   }
 
@@ -515,33 +540,26 @@ export class Game {
       coins: this.runCoins,
       deaths: this.deaths,
       lives: this.lives,
-      progress: this.progress(),
+      progress: 0,
       nitro: this.body.nitro,
       level: this.data.number,
       shield: this.shield,
+      place: 0,
+      racers: this.rivals.list.length + 1,
+      rivals: [],
     };
+    const total = this.tracker?.total || 1;
+    const my = this.state === 'finished' ? total : this.tracker ? this.tracker.measure(this.body.x, this.body.z) : 0;
+    hud.progress = clamp(my / total, 0, 1);
+    if (hud.racers > 1) {
+      let ahead = 0;
+      for (const r of this.rivals.list) {
+        hud.rivals.push({ p: clamp(r.dist / total, 0, 1), color: r.color });
+        if (this.state === 'finished' ? r.finished && r.finishTime < this.time : r.finished || r.dist > my) ahead++;
+      }
+      hud.place = ahead + 1;
+    }
     bus.emit('hud', hud, force);
   }
 
-  private progress(): number {
-    const path = this.data!.path;
-    const b = this.body;
-    let best = Infinity, bestS = 0, acc = 0, total = 0;
-    for (let i = 1; i < path.length; i++) total += Math.hypot(path[i][0] - path[i - 1][0], path[i][2] - path[i - 1][2]);
-    for (let i = 1; i < path.length; i++) {
-      const a = path[i - 1], c = path[i];
-      const sx = c[0] - a[0], sz = c[2] - a[2];
-      const len = Math.hypot(sx, sz) || 1;
-      let k = ((b.x - a[0]) * sx + (b.z - a[2]) * sz) / (len * len);
-      k = clamp(k, 0, 1);
-      const px = a[0] + sx * k, pz = a[2] + sz * k;
-      const d = Math.hypot(b.x - px, b.z - pz);
-      if (d < best) {
-        best = d;
-        bestS = acc + len * k;
-      }
-      acc += len;
-    }
-    return total > 0 ? clamp(bestS / total, 0, 1) : 0;
-  }
 }

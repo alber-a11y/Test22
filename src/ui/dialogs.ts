@@ -73,6 +73,7 @@ export function levelStartDialog(level: number, onStart: (boosters: BoosterKind[
 // ------------------------------------------------------------ пауза
 
 export interface PauseActions {
+  shop(): void;
   resume(): void;
   restart(): void;
   map(): void;
@@ -93,6 +94,10 @@ export function pauseDialog(a: PauseActions): Modal {
         a.restart();
       }),
       btn([icon('gear'), t('settings')], 'btn-blue', () => a.settings()),
+      btn([icon('cart'), t('shop')], 'btn-orange', () => {
+        m.close();
+        a.shop();
+      }),
       btn([icon('map'), t('levels')], 'btn-orange', () => {
         m.close();
         a.map();
@@ -147,6 +152,7 @@ export function gameOverDialog(deaths: number, a: GameOverActions): Modal {
 // ------------------------------------------------------------ победа
 
 export interface WinActions {
+  shop(): void;
   next(): void;
   map(): void;
 }
@@ -182,6 +188,7 @@ export function winDialog(r: LevelResult, a: WinActions): Modal {
       return;
     }
     claimed = true;
+    r.multiplied = true;
     addCoins(r.reward * (mult - 1));
     rewardVal.textContent = fmtNum(r.reward * mult);
     sfx.reward();
@@ -190,23 +197,32 @@ export function winDialog(r: LevelResult, a: WinActions): Modal {
     roulette.remove();
   }, { style: 'animation:pulse 1.1s infinite' });
 
+  if (r.multiplied) running = false;
   const m = modal([
     h('h2', {}, t('levelComplete')),
     starsEl,
     r.newRecord ? h('div', { class: 'note', style: 'color:#ff9800' }, `🏆 ${t('newRecord')}`) : null,
+    r.place > 0
+      ? h('div', { class: `race-result p${r.place}` }, `🏁 ${t('place')}: ${r.place} ${t('of')} ${r.racers}`, r.placeBonus > 0 ? h('span', {}, ` +${r.placeBonus}`, coinIcon()) : null)
+      : null,
     h('div', { class: 'results' },
       h('span', { class: 'k' }, t('time')), h('span', { class: 'v' }, fmtTime(r.time)),
       h('span', { class: 'k' }, t('falls')), h('span', { class: 'v' }, String(r.deaths)),
       h('span', { class: 'k' }, t('coins')), h('span', { class: 'v' }, String(r.coins) + (r.x2 ? ' ×2' : '')),
     ),
     h('div', { class: 'reward-big' }, coinIcon(), rewardVal),
-    roulette,
-    multBtn,
+    r.multiplied ? null : roulette,
+    r.multiplied ? null : multBtn,
     h('div', { class: 'btn-row' },
       btn([icon('map'), t('levels')], 'btn-orange', () => {
         running = false;
         m.close();
         a.map();
+      }),
+      btn([icon('cart'), t('shop')], 'btn-orange', () => {
+        running = false;
+        m.close();
+        a.shop();
       }),
       btn([t('next'), icon('play')], 'btn-green', () => {
         running = false;

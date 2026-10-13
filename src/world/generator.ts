@@ -351,7 +351,7 @@ const SEGMENTS: Record<SegName, SegFn> = {
     b.tile(10, 4.5, { boost: true });
     const gap = r.range(lerp(6.5, 8, m1(d)), lerp(8, 10.5, m1(d)));
     b.coinArc(gap, 0, 5, 2.2);
-    b.tile(Math.max(10, 21 - gap), 5, { gap });
+    b.tile(Math.max(16, 27 - gap), 5, { gap });
   },
 
   turn(b, d, r) {
@@ -387,6 +387,12 @@ const SEGMENTS: Record<SegName, SegFn> = {
 
 // ---------------------------------------------------------------- сборка уровня
 
+export function pathLength(path: [number, number, number][]): number {
+  let len = 0;
+  for (let i = 1; i < path.length; i++) len += Math.hypot(path[i][0] - path[i - 1][0], path[i][2] - path[i - 1][2]);
+  return len;
+}
+
 export function generateLevel(n: number): LevelData {
   const rng = new Rng(n * 7919 + 13);
   const b = new Builder(rng);
@@ -420,6 +426,29 @@ export function generateLevel(n: number): LevelData {
     else SEGMENTS[st[0]](b, st[1], rng);
   }
 
+  // Удлиняем трассу: добиваем сегментами того же уровня (те же механики и сложность)
+  const FINISH_LEN = 16; // финишная часть добавляется ниже
+  const target = (pathLength(b.path) + FINISH_LEN) * CONFIG.trackLengthMul - FINISH_LEN;
+  const pool = steps.filter((st): st is [SegName, number] => st !== 'cp');
+  let extra = 0;
+  while (CONFIG.trackLengthMul > 1 && target - pathLength(b.path) > 12 && extra < 12) {
+    if (extra % 2 === 0) {
+      b.seg = 'cp';
+      b.checkpoint();
+    }
+    const [name, d] = pool[Math.floor(rng.next() * pool.length)];
+    b.seg = name;
+    SEGMENTS[name](b, d, rng);
+    extra++;
+  }
+  // Остаток добиваем прямой плиткой с монетами
+  const rest = target - pathLength(b.path);
+  if (CONFIG.trackLengthMul > 1 && rest > 2) {
+    b.seg = 'straight';
+    b.coinLine(1, rest - 1, Math.max(2, Math.round(rest / 3)));
+    b.tile(rest, 4.5);
+  }
+
   // Финиш
   b.tile(4, 5);
   const finLen = 12, finW = 8;
@@ -430,11 +459,7 @@ export function generateLevel(n: number): LevelData {
   b.path.push([ex, b.cy, ez]);
   b.pathSeg.push('finish');
 
-  let len = 0;
-  for (let i = 1; i < b.path.length; i++) {
-    const a = b.path[i - 1], c = b.path[i];
-    len += Math.hypot(c[0] - a[0], c[2] - a[2]);
-  }
+  const len = pathLength(b.path);
   let minY = 0;
   for (const p of b.platforms) minY = Math.min(minY, p.y - (p.profile?.type === 'descent' ? p.profile.drop : 0));
 

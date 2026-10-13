@@ -24,6 +24,8 @@ export class Hud {
   private nitro: HTMLElement;
   private speed: HTMLElement;
   private hint: HTMLElement;
+  private placeEl: HTMLElement;
+  private markers: HTMLElement;
   private lastLives = -1;
   private lastShield = false;
 
@@ -37,6 +39,8 @@ export class Hud {
     this.label = h('div', { class: 'level-label' });
     this.nitro = h('div');
     this.speed = h('div', { class: 'speedlines' });
+    this.placeEl = h('div', { class: 'race-place' });
+    this.markers = h('div', { class: 'markers' });
     this.hint = h('div', {},
       h('div', { class: 'hud-hint keys' }, t('controlsHelp')),
       h('div', { class: 'hud-hint taps' }, `◀ ▶ — ${t('controls').toLowerCase()} · ${t('jump')} = ${t('jump').toLowerCase()} + ${t('gas').toLowerCase()}`),
@@ -52,8 +56,9 @@ export class Hud {
         this.hearts,
       ),
       h('div', { class: 'hud-center' },
-        h('div', { class: 'progress' }, this.fill),
+        h('div', { class: 'progress-wrap' }, h('div', { class: 'progress' }, this.fill), this.markers),
         this.label,
+        this.placeEl,
         h('div', { class: 'nitro-bar' }, this.nitro),
       ),
       h('div', { class: 'hud-right' },
@@ -98,6 +103,23 @@ export class Hud {
     this.coins.textContent = fmtNum(s.coins);
     this.fill.style.width = `${(s.progress * 100).toFixed(1)}%`;
     this.nitro.style.width = `${(s.nitro * 100).toFixed(0)}%`;
+    if (s.racers > 1) {
+      this.placeEl.style.display = '';
+      this.placeEl.textContent = `🏁 ${t('place')} ${s.place}/${s.racers}`;
+      this.placeEl.classList.toggle('lead', s.place === 1);
+      while (this.markers.children.length < s.rivals.length) this.markers.appendChild(h('i'));
+      while (this.markers.children.length > s.rivals.length) this.markers.lastElementChild!.remove();
+      s.rivals.forEach((r, i) => {
+        const m = this.markers.children[i] as HTMLElement;
+        m.style.left = `${(r.p * 100).toFixed(1)}%`;
+        m.style.background = r.color;
+      });
+      const me = (this.markers.querySelector('.me') as HTMLElement) ?? this.markers.appendChild(h('b', { class: 'me' }));
+      me.style.left = `${(s.progress * 100).toFixed(1)}%`;
+    } else {
+      this.placeEl.style.display = 'none';
+      this.markers.replaceChildren();
+    }
     if (force || s.lives !== this.lastLives || s.shield !== this.lastShield) {
       this.lastLives = s.lives;
       this.lastShield = s.shield;

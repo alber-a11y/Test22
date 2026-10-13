@@ -60,6 +60,8 @@ export function profileEndRise(def: PlatformDef): number {
   return -p.drop;
 }
 
+const pose = { x: 0, y: 0, z: 0, yaw: 0 };
+
 export class Platform {
   x: number;
   y: number;
@@ -93,18 +95,33 @@ export class Platform {
     this.sin = Math.sin(this.yaw);
   }
 
-  /** Обновление движения на момент времени t. */
-  update(t: number, dt: number): void {
+  /** Положение движущейся платформы в момент t (без изменения состояния) — для предсказаний ИИ. */
+  poseAt(t: number, out: { x: number; y: number; z: number; yaw: number }): void {
     const m = this.def.motion;
-    const px = this.x, py = this.y, pz = this.z, pyaw = this.yaw;
+    out.x = this.def.x;
+    out.y = this.def.y;
+    out.z = this.def.z;
+    out.yaw = this.def.yaw;
     if (m?.type === 'slide') {
       const s = Math.sin(t * m.speed + m.phase);
-      this.x = this.def.x + m.ax * s;
-      this.y = this.def.y + m.ay * s;
-      this.z = this.def.z + m.az * s;
-    } else if (m?.type === 'spin') {
-      this.yaw = this.def.yaw + t * m.speed;
-      this.updateTrig();
+      out.x += m.ax * s;
+      out.y += m.ay * s;
+      out.z += m.az * s;
+    } else if (m?.type === 'spin') out.yaw += t * m.speed;
+  }
+
+  /** Обновление движения на момент времени t. */
+  update(t: number, dt: number): void {
+    const px = this.x, py = this.y, pz = this.z, pyaw = this.yaw;
+    if (this.def.motion) {
+      this.poseAt(t, pose);
+      this.x = pose.x;
+      this.y = pose.y;
+      this.z = pose.z;
+      if (pose.yaw !== this.yaw) {
+        this.yaw = pose.yaw;
+        this.updateTrig();
+      }
     }
     this.dx = this.x - px;
     this.dy = this.y - py;

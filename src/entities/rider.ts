@@ -52,7 +52,8 @@ export class Rider {
     if (pose === 'pedal') {
       for (const [i, leg] of [c.legL, c.legR].entries()) {
         const a = crank + (i === 0 ? 0 : Math.PI);
-        const fy = v.crankPos.y + Math.sin(a) * v.crankR;
+        // вперёд = -Z: при росте угла стопа идёт вперёд → вниз → назад → вверх (педалирование вперёд)
+        const fy = v.crankPos.y - Math.sin(a) * v.crankR;
         const fz = v.crankPos.z - Math.cos(a) * v.crankR;
         this.character.setLeg(leg, -(fz - seat.z), seat.y - fy);
       }
@@ -97,6 +98,7 @@ export class Rider {
     this.tilt.scale.set(1 + sq * 0.12, 1 - sq * 0.18, 1 + sq * 0.12);
     this.tilt.position.y = v.hover ? v.hover + Math.sin(this.time * 4) * 0.05 : 0;
 
+    if (v.crank) v.crank.rotation.x = -this.crankAngle;
     if (this.vdef.pose === 'pedal') this.applyPose(this.crankAngle);
     else {
       // лёгкое покачивание
