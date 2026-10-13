@@ -159,12 +159,9 @@ export class Rival {
   }
 
   think(plats: Platform[], t: number, dt: number, racing: boolean): void {
-    if (this.deadT > 0 || !racing) {
-      this.ctl = { gas: false, brake: true, steer: 0, jump: false, nitro: false };
-      return;
-    }
-    if (this.finished) {
-      this.ctl = { gas: false, brake: true, steer: 0, jump: false, nitro: false };
+    if (this.deadT > 0 || !racing || this.finished) {
+      // Стоим/тормозим до полной остановки. Тормоз на месте = задний ход, поэтому только пока едем вперёд.
+      this.ctl = { gas: false, brake: this.body.forwardSpeed > 0.3, steer: 0, jump: false, nitro: false };
       return;
     }
     this.ctl = this.pilot.think(this.body, plats, t, dt);

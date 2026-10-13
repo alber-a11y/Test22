@@ -118,7 +118,7 @@ export class Game {
   }
 
   private dustColor(): number {
-    return this.data ? this.data.theme.tileA : 0xffffff;
+    return this.data ? this.data.look.tileA : 0xffffff;
   }
 
   private vibrate(ms: number): void {
@@ -247,7 +247,7 @@ export class Game {
 
     if (!frozen && (this.state === 'play' || this.state === 'ready' || this.state === 'finished')) {
       if (this.state === 'play') this.time += dt;
-      const c = this.state === 'finished' ? { gas: false, brake: true, steer: 0, jump: false, nitro: false } : ctl;
+      const c = this.state === 'finished' ? { gas: false, brake: this.body.forwardSpeed > 0.3, steer: 0, jump: false, nitro: false } : ctl;
       if (c.nitro && this.body.nitro > 0.05 && !this.body.nitroActive) sfx.nitro();
       const racing = this.state === 'play' || this.state === 'finished';
       this.rivals.think(this.view.platforms, this.simTime, dt, racing);

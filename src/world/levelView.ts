@@ -1,7 +1,7 @@
 // 3D-представление уровня: плитки (склеенные в общие меши), движущиеся объекты, монеты, флаги, финиш.
 import * as THREE from 'three';
 import { GeoBuilder, buildPlatformGeo } from '../render/geo';
-import { bounceTexture, checkerTexture, chevronTexture, crackTexture, finishTexture } from '../render/textures';
+import { bounceTexture, chevronTexture, crackTexture, finishTexture, tileTexture } from '../render/textures';
 import { GEO, glow, mesh, toon } from '../entities/materials';
 import { Platform, type PlatformDef } from './platform';
 import type { LevelData, Spot } from './generator';
@@ -34,7 +34,7 @@ export class LevelView {
     const sideTop = new THREE.Color(th.side), sideBottom = new THREE.Color(th.sideDark);
     const opts = { world: true, sideTop, sideBottom };
 
-    const topMat = new THREE.MeshLambertMaterial({ map: checkerTexture(th.tileA, th.tileB) });
+    const topMat = new THREE.MeshLambertMaterial({ map: tileTexture(data.look.pattern, data.look.tileA, data.look.tileB) });
     const sideMat = new THREE.MeshLambertMaterial({ vertexColors: true });
     this.chevronTex = chevronTexture().clone();
     this.chevronTex.needsUpdate = true;
@@ -83,7 +83,7 @@ export class LevelView {
         const g = new THREE.Group();
         let tm: THREE.Material = topMat;
         if (def.role === 'vanish') {
-          tm = new THREE.MeshLambertMaterial({ map: crackTexture(th.tileA, th.tileB), transparent: true });
+          tm = new THREE.MeshLambertMaterial({ map: crackTexture(data.look.tileA, data.look.tileB), transparent: true });
           this.materials.push(tm);
         }
         const sm = def.role === 'vanish' ? new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true }) : sideMat;

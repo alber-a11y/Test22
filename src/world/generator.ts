@@ -2,6 +2,7 @@
 import { CONFIG } from '../core/config';
 import { Rng, clamp, lerp } from '../core/rng';
 import { themeForLevel, type Theme } from './themes';
+import { TILE_PATTERNS, type TilePattern } from '../render/textures';
 import { profileEndRise, type PlatformDef } from './platform';
 
 export interface Spot {
@@ -20,6 +21,7 @@ export interface LevelData {
   finish: Spot & { w: number };
   path: [number, number, number][];
   pathSeg: string[]; // имя сегмента для каждой точки пути (отладка)
+  look: LevelLook;
   parTime: number;
   killY: number;
 }
@@ -387,6 +389,22 @@ const SEGMENTS: Record<SegName, SegFn> = {
 
 // ---------------------------------------------------------------- сборка уровня
 
+export interface LevelLook {
+  pattern: TilePattern;
+  tileA: number;
+  tileB: number;
+}
+
+/** Внешний вид плиток уровня: узор и цвета меняются от уровня к уровню (соседние никогда не совпадают). */
+export function levelLook(n: number): LevelLook {
+  const th = themeForLevel(n);
+  const pattern = TILE_PATTERNS[(n * 2 + 7) % TILE_PATTERNS.length]; // шаг 2 взаимно прост с 9 — цикл из 9 разных
+  const pal = th.palettes[(n * 3 + Math.floor(n / 5)) % th.palettes.length];
+  // иногда меняем цвета местами — ещё больше вариантов
+  const swap = (n * 7) % 3 === 0;
+  return { pattern, tileA: swap ? pal[1] : pal[0], tileB: swap ? pal[0] : pal[1] };
+}
+
 export function pathLength(path: [number, number, number][]): number {
   let len = 0;
   for (let i = 1; i < path.length; i++) len += Math.hypot(path[i][0] - path[i - 1][0], path[i][2] - path[i - 1][2]);
@@ -472,6 +490,7 @@ export function generateLevel(n: number): LevelData {
     finish,
     path: b.path,
     pathSeg: b.pathSeg,
+    look: levelLook(n),
     parTime: Math.round(len / 8.5 + b.extraTime + 3),
     killY: minY - 14,
   };

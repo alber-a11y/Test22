@@ -231,3 +231,153 @@ export function softDot(): THREE.Texture {
   cache.set('dot', t);
   return t;
 }
+
+// ---------------------------------------------------------------- узоры плиток (128px = 2 м, тайлятся)
+
+export const TILE_PATTERNS = ['checker', 'stripes', 'bricks', 'dots', 'planks', 'diamonds', 'tiles', 'zigzag', 'grid'] as const;
+export type TilePattern = (typeof TILE_PATTERNS)[number];
+
+/** Текстура покрытия плитки: узор + два цвета. */
+export function tileTexture(pattern: TilePattern, a: number, b: number): THREE.Texture {
+  if (pattern === 'checker') return checkerTexture(a, b);
+  const key = `tile-${pattern}-${a}-${b}`;
+  const got = cache.get(key);
+  if (got) return got;
+  const S = 128;
+  const [c, g] = canvas(S, S);
+  const A = hex(a), B = hex(b);
+  g.fillStyle = A;
+  g.fillRect(0, 0, S, S);
+  switch (pattern) {
+    case 'stripes': {
+      // диагональные полосы, период 32px по обеим осям — бесшовно
+      g.fillStyle = B;
+      for (let k = -S; k < S * 2; k += 32) {
+        g.beginPath();
+        g.moveTo(k, 0);
+        g.lineTo(k + 16, 0);
+        g.lineTo(k + 16 - S, S);
+        g.lineTo(k - S, S);
+        g.closePath();
+        g.fill();
+      }
+      break;
+    }
+    case 'bricks': {
+      g.fillStyle = shade(b, 0.8);
+      g.fillRect(0, 0, S, S);
+      for (let row = 0; row < 4; row++) {
+        const off = row % 2 ? 32 : 0;
+        for (let x = -64; x < S + 64; x += 64) {
+          g.fillStyle = (row + x / 64) % 2 ? A : shade(a, 0.92);
+          g.fillRect(x + off + 2, row * 32 + 2, 60, 28);
+          g.fillStyle = shade(a, 1.1);
+          g.fillRect(x + off + 2, row * 32 + 2, 60, 3);
+        }
+      }
+      break;
+    }
+    case 'dots': {
+      g.fillStyle = B;
+      for (let y = 0; y <= S; y += 32)
+        for (let x = 0; x <= S; x += 32) {
+          const ox = (y / 32) % 2 ? 16 : 0;
+          for (const dx of [0, S]) {
+            g.beginPath();
+            g.arc(x + ox - dx, y, 8, 0, Math.PI * 2);
+            g.fill();
+          }
+        }
+      break;
+    }
+    case 'planks': {
+      for (let i = 0; i < 4; i++) {
+        g.fillStyle = i % 2 ? A : shade(a, 0.9);
+        g.fillRect(i * 32, 0, 32, S);
+        // стык досок
+        const y = (i * 37) % S;
+        g.fillStyle = shade(b, 0.7);
+        g.fillRect(i * 32, y, 32, 3);
+        g.fillStyle = shade(b, 0.6);
+        g.fillRect(i * 32 + 6, (y + 8) % S, 3, 3);
+        g.fillRect(i * 32 + 23, (y + 8) % S, 3, 3);
+        // волокна
+        g.strokeStyle = shade(a, 0.82);
+        g.lineWidth = 1.5;
+        g.beginPath();
+        g.moveTo(i * 32 + 12, 0);
+        g.bezierCurveTo(i * 32 + 18, 40, i * 32 + 8, 90, i * 32 + 14, S);
+        g.stroke();
+      }
+      g.fillStyle = shade(b, 0.65);
+      for (let i = 0; i <= 4; i++) g.fillRect(i * 32 - 1, 0, 2, S);
+      break;
+    }
+    case 'diamonds': {
+      g.fillStyle = B;
+      for (const [cx, cy] of [[32, 32], [96, 32], [32, 96], [96, 96]]) {
+        g.beginPath();
+        g.moveTo(cx, cy - 28);
+        g.lineTo(cx + 28, cy);
+        g.lineTo(cx, cy + 28);
+        g.lineTo(cx - 28, cy);
+        g.closePath();
+        g.fill();
+      }
+      g.strokeStyle = shade(a, 1.15);
+      g.lineWidth = 2;
+      for (let k = -S; k <= S; k += 64) {
+        g.beginPath();
+        g.moveTo(k, 0);
+        g.lineTo(k + S, S);
+        g.moveTo(k + S, 0);
+        g.lineTo(k, S);
+        g.stroke();
+      }
+      break;
+    }
+    case 'tiles': {
+      g.fillStyle = shade(b, 0.85);
+      g.fillRect(0, 0, S, S);
+      for (let y = 0; y < 2; y++)
+        for (let x = 0; x < 2; x++) {
+          g.fillStyle = (x + y) % 2 ? A : shade(a, 0.93);
+          if (g.roundRect) {
+            g.beginPath();
+            g.roundRect(x * 64 + 4, y * 64 + 4, 56, 56, 12);
+            g.fill();
+          } else g.fillRect(x * 64 + 4, y * 64 + 4, 56, 56);
+          g.fillStyle = 'rgba(255,255,255,0.22)';
+          g.fillRect(x * 64 + 12, y * 64 + 9, 32, 5);
+        }
+      break;
+    }
+    case 'zigzag': {
+      g.fillStyle = B;
+      for (let y = 0; y < S; y += 32) {
+        g.beginPath();
+        g.moveTo(0, y + 16);
+        for (let x = 0; x <= S; x += 16) g.lineTo(x, y + (x / 16) % 2 * 10 + 6);
+        for (let x = S; x >= 0; x -= 16) g.lineTo(x, y + (x / 16) % 2 * 10 + 18);
+        g.closePath();
+        g.fill();
+      }
+      break;
+    }
+    case 'grid': {
+      g.fillStyle = shade(a, 0.94);
+      g.fillRect(0, 0, 64, 64);
+      g.fillRect(64, 64, 64, 64);
+      g.fillStyle = B;
+      for (let i = 0; i <= S; i += 32) {
+        const w = i % 64 === 0 ? 4 : 2;
+        g.fillRect(i - w / 2, 0, w, S);
+        g.fillRect(0, i - w / 2, S, w);
+      }
+      break;
+    }
+  }
+  const t = toTexture(c);
+  cache.set(key, t);
+  return t;
+}
