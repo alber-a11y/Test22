@@ -37,6 +37,12 @@ export const sfx = {
     audio.tone(180, 0.35, 0, { type: 'sine', vol: 0.3, slideTo: 700, vibrato: 0.03 });
     audio.tone(360, 0.3, 0, { type: 'triangle', vol: 0.1, slideTo: 1200 });
   },
+  bump(power: number) {
+    const v = Math.min(0.3, 0.1 + power * 0.025);
+    audio.tone(140, 0.12, 0, { type: 'square', vol: v, slideTo: 70, filter: 1200 });
+    audio.noise(0.1, 0, { vol: v * 0.8, filter: 1800 });
+    audio.tone(520, 0.08, audio.now + 0.02, { type: 'triangle', vol: v * 0.4, slideTo: 300 });
+  },
   barrier() {
     audio.noise(0.2, 0, { vol: 0.3, filter: 1200 });
     audio.tone(160, 0.2, 0, { type: 'square', vol: 0.15, slideTo: 60, filter: 900 });

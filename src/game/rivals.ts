@@ -289,3 +289,58 @@ export class Rivals {
     this.list = [];
   }
 }
+
+// ---------------------------------------------------------------- столкновения гонщиков
+
+export interface Racer {
+  body: PlayerBody;
+  alive: boolean;
+  id: number; // -1 — игрок
+}
+
+const RACER_R = 0.6;
+const RESTITUTION = 0.7;
+
+/** Расталкивает гонщиков (игрок и боты): круги в плоскости XZ + перекрытие по высоте. */
+export function collideRacers(racers: Racer[], onHit: (a: Racer, b: Racer, power: number, x: number, y: number, z: number) => void): void {
+  for (let i = 0; i < racers.length; i++) {
+    const A = racers[i];
+    if (!A.alive) continue;
+    for (let j = i + 1; j < racers.length; j++) {
+      const B = racers[j];
+      if (!B.alive) continue;
+      const a = A.body, b = B.body;
+      if (Math.abs(a.y - b.y) > 1.2) continue;
+      let nx = a.x - b.x, nz = a.z - b.z;
+      const d2 = nx * nx + nz * nz;
+      const min = RACER_R * 2;
+      if (d2 >= min * min) continue;
+      let d = Math.sqrt(d2);
+      if (d < 1e-4) {
+        nx = Math.cos(a.yaw);
+        nz = -Math.sin(a.yaw);
+        d = 1e-4;
+      } else {
+        nx /= d;
+        nz /= d;
+      }
+      // раздвигаем поровну
+      const push = (min - d) / 2;
+      a.x += nx * push;
+      a.z += nz * push;
+      b.x -= nx * push;
+      b.z -= nz * push;
+      // упругий обмен импульсом вдоль нормали (массы равны)
+      const vn = (a.vx - b.vx) * nx + (a.vz - b.vz) * nz;
+      if (vn < 0) {
+        const jImp = (-(1 + RESTITUTION) * vn) / 2 + 1.2; // +1.2 — минимальный «пинок»
+        a.vx += nx * jImp;
+        a.vz += nz * jImp;
+        b.vx -= nx * jImp;
+        b.vz -= nz * jImp;
+        a.bumpT = b.bumpT = 0.45;
+        onHit(A, B, -vn, (a.x + b.x) / 2, (a.y + b.y) / 2 + 0.7, (a.z + b.z) / 2);
+      }
+    }
+  }
+}

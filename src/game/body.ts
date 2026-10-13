@@ -49,6 +49,7 @@ export class PlayerBody {
   jumpMul = 1;
   nitroRegenBonus = 1;
   stunT = 0;
+  bumpT = 0; // после толчка сцепление с дорогой ослаблено — машину «сносит»
   stats: Stats;
 
   constructor(stats: Stats, public ev: BodyEvents) {
@@ -67,6 +68,7 @@ export class PlayerBody {
     this.jumpBuf = 0;
     this.boostT = 0;
     this.stunT = 0;
+    this.bumpT = 0;
     this.nitroActive = false;
   }
 
@@ -83,6 +85,7 @@ export class PlayerBody {
     const st = this.stats;
     this.jumpBuf = c.jump ? CONFIG.jumpBuffer : this.jumpBuf - dt;
     this.stunT = Math.max(0, this.stunT - dt);
+    this.bumpT = Math.max(0, this.bumpT - dt);
     const ctl = this.stunT > 0 ? { gas: false, brake: false, steer: 0, jump: false, nitro: false } : c;
 
     // Перенос движущейся платформой
@@ -133,7 +136,7 @@ export class PlayerBody {
         if (Math.abs(s) < 0.2) s = 0;
         if (s > max) s += (max - s) * (1 - Math.exp(-2.5 * dt));
       }
-      l *= Math.exp(-12 * dt);
+      l *= Math.exp(-(this.bumpT > 0 ? 2.5 : 12) * dt);
     } else {
       if (ctl.gas && s < max) s = Math.min(max, s + st.accel * 0.3 * dt);
       if (ctl.brake && s > 0) s = Math.max(0, s - st.accel * 0.4 * dt);

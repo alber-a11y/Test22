@@ -15,7 +15,7 @@ import { Shape } from '../render/particles';
 import type { Stage } from './stage';
 import { t } from '../ui/i18n';
 import { PathTracker } from './autopilot';
-import { Rivals } from './rivals';
+import { Rivals, collideRacers, type Racer } from './rivals';
 
 export type GameState = 'ready' | 'play' | 'dead' | 'over' | 'finished';
 
@@ -257,6 +257,7 @@ export class Game {
       while (this.acc >= step) {
         this.body.step(step, first ? c : { ...c, jump: false }, this.view.platforms);
         this.rivals.step(step, first, this.view.platforms);
+        if (this.rivals.list.length) this.collide();
         first = false;
         this.acc -= step;
       }
@@ -354,6 +355,33 @@ export class Game {
       this.lastVanishSound = this.simTime;
       sfx.vanish();
     }
+  }
+
+  private racers: Racer[] = [];
+  private bumpCooldown = 0;
+
+  /** Столкновения игрока и соперников. */
+  private collide(): void {
+    const r = this.racers;
+    r.length = 0;
+    r.push({ body: this.body, alive: this.state === 'play' || this.state === 'ready' || this.state === 'finished', id: -1 });
+    this.rivals.list.forEach((x, i) => r.push({ body: x.body, alive: x.deadT <= 0, id: i }));
+    collideRacers(r, (a, b, power, x, y, z) => {
+      const withPlayer = a.id === -1 || b.id === -1;
+      const now = this.simTime;
+      if (now - this.bumpCooldown < 0.2) return;
+      this.bumpCooldown = now;
+      if (power > 1.5) {
+        this.stage.particles.emit({ x, y, z, color: 0xffffff, shape: Shape.Spark, count: withPlayer ? 10 : 5, spread: 5, size: 0.35, life: 0.35 });
+        this.stage.particles.emit({ x, y, z, color: 0xffd54f, shape: Shape.Star, count: withPlayer ? 4 : 2, spread: 4, size: 0.4, life: 0.5, vy: 2 });
+      }
+      if (withPlayer) {
+        sfx.bump(power);
+        this.shake = Math.max(this.shake, Math.min(0.35, 0.08 + power * 0.03));
+        this.vibrate(30);
+        this.rider?.landed(Math.min(10, power * 2));
+      }
+    });
   }
 
   private die(): void {
