@@ -63,6 +63,7 @@ export const ICONS = {
   bolt: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>',
   coins: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor"/></svg>',
   gift: '<svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="5" rx="1" fill="currentColor"/><rect x="5" y="14" width="14" height="8" rx="1" fill="currentColor"/><path d="M12 9v13" stroke="#fff" stroke-width="2.4"/><path fill="none" stroke="currentColor" stroke-width="2.2" d="M12 9C9 9 6.5 7.5 7.5 5.2 8.6 3 11 5.5 12 9c1-3.5 3.4-6 4.5-3.8C17.5 7.5 15 9 12 9z"/></svg>',
+  close: '<svg viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>',
   check: '<svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.5 5 5 10-11"/></svg>',
   shield: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z"/></svg>',
   magnet: '<svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="4.2" d="M6 3v8a6 6 0 0 0 12 0V3"/><path stroke="#fff" stroke-width="4.2" d="M6 3v3M18 3v3"/></svg>',

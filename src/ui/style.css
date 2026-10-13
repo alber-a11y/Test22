@@ -204,7 +204,7 @@ img, svg { -webkit-user-drag: none; }
 .side-col { position: absolute; display: flex; flex-direction: column; gap: 10px; top: 50%; transform: translateY(-50%); }
 .side-col.left { left: calc(14px + var(--safe-l)); }
 .side-col.right { right: calc(14px + var(--safe-r)); }
-.side-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; font-weight: 900; color: #fff; font-size: 13px; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); }
+.side-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; font-weight: 900; color: #fff; font-size: 14px; -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
 .dot-badge { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; border-radius: 50%; background: var(--red); border: 2px solid #fff; animation: pulse 1s infinite; }
 
 @media (max-height: 500px) and (orientation: landscape) {
@@ -430,10 +430,9 @@ body.touch .touch-layer { display: block; }
   padding: 12px;
   gap: 10px;
 }
-.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tabs { display: flex; gap: 5px; overflow-x: auto; flex: none; touch-action: pan-x; scrollbar-width: none; }
 .tab {
-  flex: 1 1 auto;
-  min-width: 0;
+  flex: 1 0 auto;
   font-family: var(--font);
   font-weight: 900;
   font-size: clamp(12px, 1.5vmin + 6px, 16px);
@@ -566,3 +565,22 @@ input[type='range'] { width: 100%; accent-color: var(--blue); height: 28px; }
 .ad-stub-actions { min-height: 60px; display: flex; gap: 12px; }
 
 .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity 0.4s; z-index: 30; }
+.modal-close.btn-round { width: 42px; height: 42px; }
+
+/* подсказка на тач-экранах — сверху, чтобы не перекрывать кнопки */
+.hud-hint.taps { top: calc(96px + var(--safe-t)); bottom: auto; font-size: 13px; }
+
+/* низкие экраны (телефон в альбомной ориентации) — компактные окна */
+@media (max-height: 500px) {
+  .modal .panel { gap: 6px; padding: 10px 14px; }
+  .modal h2 { font-size: 24px; }
+  .stars .ico { width: 34px; height: 34px; }
+  .stars .ico:nth-child(2) { transform: translateY(-5px); }
+  .reward-big { font-size: 26px; }
+  .results { font-size: 14px; gap: 2px 14px; }
+  .roulette { height: 32px; }
+  .roulette > div { font-size: 15px; }
+  .modal .btn-big { font-size: 18px; padding: 0.4em 1.2em; }
+  .big-skull { width: 48px; height: 48px; }
+  .boosters .ico { width: 26px; height: 26px; }
+}

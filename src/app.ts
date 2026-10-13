@@ -117,6 +117,7 @@ export class App {
     if (this.game.rider) this.game.rider.root.visible = inGameScene;
     this.stage.setShowcaseFocus(m === 'shop' ? (this.stage.width > this.stage.height && this.stage.width > 760 ? 0.27 : 0.5) : 0.5, m === 'shop' && !(this.stage.width > this.stage.height && this.stage.width > 760) ? 0.27 : 0.5);
     if (!inGameScene) this.stage.setShowcaseRider();
+    this.stage.setPodiumVisible(m !== 'map');
     audio.setDuck(1);
     this.syncMusic();
   }

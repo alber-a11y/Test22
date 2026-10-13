@@ -29,6 +29,7 @@ async function boot(): Promise<void> {
   const app = new App(document.getElementById('game-canvas') as HTMLCanvasElement);
   await step(75);
   app.boot();
+  if (new URLSearchParams(location.search).has('debug')) (window as unknown as { __app: App }).__app = app;
   await step(100);
   hint.style.visibility = 'visible';
 

@@ -444,7 +444,7 @@ export class Game {
         if (i % 2 === 1 && kind !== 'rainbow') continue;
         switch (kind) {
           case 'dust':
-            this.stage.particles.emit({ x: p.x, y: p.y + 0.1, z: p.z, vy: 0.8, spread: 1.2, color: 0xffffff, size: 0.35, life: 0.45, grow: 1.2 });
+            this.stage.particles.emit({ x: p.x, y: p.y + 0.1, z: p.z, vy: 0.6, spread: 1, color: 0xffffff, size: 0.18, life: 0.4, grow: 1 });
             break;
           case 'stars':
             this.stage.particles.emit({ x: p.x, y: p.y + 0.2, z: p.z, vy: 1.2, spread: 1.5, color: 0xffe14d, shape: Shape.Star, size: 0.3, life: 0.6 });
@@ -481,7 +481,7 @@ export class Game {
     dy = Math.atan2(Math.sin(dy), Math.cos(dy));
     if (!dead) this.camYaw += dy * (1 - Math.exp(-4 * dt));
     const dist = portrait ? 8.4 : 7;
-    const height = portrait ? 4.2 : 3.4;
+    const height = portrait ? 4.4 : 3.8;
     const fx = -Math.sin(this.camYaw), fz = -Math.cos(this.camYaw);
     const ty = dead ? Math.max(b.y, this.respawn.y - 6) : b.y;
     const want = tmp.set(b.x - fx * dist, ty + height, b.z - fz * dist);
@@ -490,8 +490,8 @@ export class Game {
       this.camPos.z = damp(this.camPos.z, want.z, 10, dt);
       this.camPos.y = damp(this.camPos.y, want.y, 6, dt);
     }
-    this.camLook.x = damp(this.camLook.x, b.x + fx * 4, 12, dt);
-    this.camLook.z = damp(this.camLook.z, b.z + fz * 4, 12, dt);
+    this.camLook.x = damp(this.camLook.x, b.x + fx * 5, 12, dt);
+    this.camLook.z = damp(this.camLook.z, b.z + fz * 5, 12, dt);
     this.camLook.y = damp(this.camLook.y, (dead ? b.y : ty) + 1.1, 8, dt);
     cam.position.copy(this.camPos);
     if (this.shake > 0) {

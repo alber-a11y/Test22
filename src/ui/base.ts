@@ -30,7 +30,7 @@ export interface Modal {
 let modalStack: Modal[] = [];
 
 export function modal(children: (Node | null | false)[], opts: { cls?: string; onClose?: () => void; closable?: boolean } = {}): Modal {
-  const panel = h('div', { class: `panel ${opts.cls ?? ''}` });
+  const panel = h('div', { class: `panel scrollable ${opts.cls ?? ''}` });
   for (const c of children) if (c) panel.appendChild(c);
   const el = h('div', { class: 'modal' }, panel);
   const m: Modal = {
@@ -43,7 +43,7 @@ export function modal(children: (Node | null | false)[], opts: { cls?: string; o
     },
   };
   if (opts.closable) {
-    panel.appendChild(btn(icon('left'), 'btn-round btn-red btn-small modal-close', () => m.close(), { 'aria-label': 'close' }));
+    panel.appendChild(btn(icon('close'), 'btn-round btn-red btn-small modal-close', () => m.close(), { 'aria-label': 'close' }));
   }
   uiRoot().appendChild(el);
   modalStack.push(m);

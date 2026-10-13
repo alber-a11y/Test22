@@ -134,6 +134,10 @@ export class Stage {
     this.applyViewOffset();
   }
 
+  setPodiumVisible(on: boolean): void {
+    this.podium.visible = on;
+  }
+
   setShowcaseFocus(x: number, y = 0.5): void {
     this.focusX = x;
     this.focusY = y;
@@ -159,9 +163,10 @@ export class Stage {
       this.showRider.root.rotation.y = rot;
       this.showRider.update(dt, 2.5, Math.sin(this.showTime * 0.8) * 0.4, true, 0, true);
     }
-    const target = new THREE.Vector3(0, 0.9, 0);
-    this.camera.fov = this.camera.aspect < 1 ? 62 : 45;
-    this.camera.position.set(0, 2.1, this.camera.aspect < 1 ? 7.4 : 5.6);
+    const target = new THREE.Vector3(0, 1.1, 0);
+    const portrait = this.camera.aspect < 1;
+    this.camera.fov = portrait ? 60 : 42;
+    this.camera.position.set(0, 2.6, portrait ? 9.5 : 7.6);
     this.camera.lookAt(target);
     this.camera.updateProjectionMatrix();
     this.env.update(target, this.showTime, dt);

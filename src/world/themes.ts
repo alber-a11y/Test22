@@ -40,7 +40,7 @@ export const THEMES: Theme[] = [
   {
     id: 'ice', name: { ru: 'Ледяной пик', en: 'Ice Peak' },
     skyTop: 0x6fd3ff, skyHorizon: 0xe3f8ff, skyBottom: 0xffffff, fog: 0xe0f6ff,
-    tileA: 0xe8f7ff, tileB: 0x9fd6f5, side: 0x3c5aa8, sideDark: 0x243a78, accent: 0xff5c8a, cloud: 0xffffff, sun: 0xffffff,
+    tileA: 0xffffff, tileB: 0x7cc8f2, side: 0x3c5aa8, sideDark: 0x243a78, accent: 0xff5c8a, cloud: 0xffffff, sun: 0xffffff,
   },
 ];
 

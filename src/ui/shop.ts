@@ -28,6 +28,12 @@ interface Item {
 }
 
 const hex = (c: number) => '#' + c.toString(16).padStart(6, '0');
+const PAINT_NAMES: Record<string, { ru: string; en: string }> = {
+  default: { ru: 'Родной', en: 'Original' }, red: { ru: 'Красный', en: 'Red' }, blue: { ru: 'Синий', en: 'Blue' },
+  green: { ru: 'Зелёный', en: 'Green' }, yellow: { ru: 'Жёлтый', en: 'Yellow' }, orange: { ru: 'Оранжевый', en: 'Orange' },
+  pink: { ru: 'Розовый', en: 'Pink' }, purple: { ru: 'Фиолетовый', en: 'Purple' }, black: { ru: 'Чёрный', en: 'Black' },
+  white: { ru: 'Белый', en: 'White' }, gold: { ru: 'Золотой', en: 'Gold' }, rainbow: { ru: 'Радужный', en: 'Rainbow' },
+};
 const MAX = { speed: 16.5, accel: 32, jump: 11.6, turn: 3.4 };
 
 export class ShopScreen {
@@ -245,7 +251,7 @@ export class ShopScreen {
       : p.color < 0 ? 'linear-gradient(135deg,#ddd 50%,#999 50%)' : hex(p.color);
     return {
       key: `p:${p.id}`,
-      name: `${t('paint')}`,
+      name: PAINT_NAMES[p.id] ? tn(PAINT_NAMES[p.id]) : t('paint'),
       price: p.price,
       thumb: () => h('div', { class: 'thumb' }, h('div', { class: 'swatch', style: `background:${bg}` })),
       preview: () => this.app.stage.setShowcaseRider(undefined, undefined, p),
